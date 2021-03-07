@@ -41,7 +41,7 @@ public class MixinGuiContainer extends GuiScreen {
         {
             GuiChest chest = (GuiChest)this.that;
             this.drawBids(slot);
-
+            this.drawCommissions(slot);
             this.drawCurrentSelectedPet(slot);
         }
     }
@@ -83,6 +83,37 @@ public class MixinGuiContainer extends GuiScreen {
                         if (lore.startsWith("Status: Sold!"))
                         {
                             this.drawGradientRect(slotLeft, slotTop, slotRight, slotBottom, yellow, yellow);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    private void drawCommissions(Slot slot)
+    {
+        if (slot.getStack() != null && slot.getStack().hasTagCompound())
+        {
+            NBTTagCompound compound = slot.getStack().getTagCompound().getCompoundTag("display");
+
+            if (compound.getTagId("Lore") == 9)
+            {
+                NBTTagList list = compound.getTagList("Lore", 8);
+
+                if (list.tagCount() > 0)
+                {
+                    for (int j1 = 0; j1 < list.tagCount(); ++j1)
+                    {
+                        int slotLeft = slot.xDisplayPosition;
+                        int slotTop = slot.yDisplayPosition;
+                        int slotRight = slotLeft + 16;
+                        int slotBottom = slotTop + 16;
+                        String lore = EnumChatFormatting.getTextWithoutFormattingCodes(list.getStringTagAt(j1));
+                        int green = ColorUtils.to32BitColor(150, 85, 255, 85);
+
+                        if (lore.startsWith("COMPLETED"))
+                        {
+                            this.drawGradientRect(slotLeft, slotTop, slotRight, slotBottom, green, green);
+                            break;
                         }
                     }
                 }
