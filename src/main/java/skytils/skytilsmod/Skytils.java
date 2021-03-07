@@ -17,6 +17,7 @@ import skytils.skytilsmod.commands.RepartyCommand;
 import skytils.skytilsmod.commands.SkytilsCommand;
 import skytils.skytilsmod.core.*;
 import skytils.skytilsmod.events.SendPacketEvent;
+import skytils.skytilsmod.events.handler.ClientEventHandler;
 import skytils.skytilsmod.features.impl.dungeons.BossHPDisplays;
 import skytils.skytilsmod.features.impl.dungeons.DungeonsFeatures;
 import skytils.skytilsmod.features.impl.dungeons.solvers.*;
@@ -106,6 +107,8 @@ public class Skytils {
         MinecraftForge.EVENT_BUS.register(new ThreeWeirdosSolver());
         MinecraftForge.EVENT_BUS.register(new TriviaSolver());
         MinecraftForge.EVENT_BUS.register(new WaterBoardSolver());
+
+        MinecraftForge.EVENT_BUS.register(new ClientEventHandler());
 
         ScreenRenderer.refresh();
         

@@ -86,6 +86,7 @@ jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     manifest.attributes(
+            "FMLAT": "skytils_at.cfg",
             "Main-Class": "SkytilsInstallerFrame",
             "FMLCorePlugin": "skytils.skytilsmod.tweaker.FMLLoadingPlugin",
             "FMLCorePluginContainsFMLMod": true,
