@@ -26,7 +26,8 @@
     "MixinRenderLightningBolt",
     "MixinTileEntityChestRenderer",
     "MixinUtil",
-    "MixinWorld"
+    "MixinWorld",
+    "TileEntitySignMixin"
   ],
   "verbose": true
 }
