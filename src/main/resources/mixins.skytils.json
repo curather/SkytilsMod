@@ -27,7 +27,8 @@
     "MixinTileEntityChestRenderer",
     "MixinUtil",
     "MixinWorld",
-    "TileEntitySignMixin"
+    "TileEntitySignMixin",
+    "GuiEditSignMixin"
   ],
   "verbose": true
 }
