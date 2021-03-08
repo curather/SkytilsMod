@@ -6,6 +6,8 @@ import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent.ClientTickEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
+import net.minecraftforge.fml.common.network.FMLNetworkEvent;
+import skytils.skytilsmod.gui.SignSelectionList;
 
 public class ClientEventHandler
 {
@@ -18,6 +20,12 @@ public class ClientEventHandler
     public ClientEventHandler()
     {
         this.mc = Minecraft.getMinecraft();
+    }
+
+    @SubscribeEvent
+    public void onDisconnectedFromServerEvent(FMLNetworkEvent.ClientDisconnectionFromServerEvent event)
+    {
+        SignSelectionList.clearAll();
     }
 
     @SubscribeEvent
