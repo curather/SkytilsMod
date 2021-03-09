@@ -674,6 +674,15 @@ public class Config extends Vigilant {
 
     @Property(
             type = PropertyType.SWITCH,
+            name = "Hide Fire on Entities",
+            description = "Prevents the game from rendering fire on burning entities.",
+            category = "Miscellaneous",
+            subcategory = "Quality of Life"
+    )
+    public boolean hideEntityFire = false;
+
+    @Property(
+            type = PropertyType.SWITCH,
             name = "Hide Lightning",
             description = "Prevents all lightning from rendering.",
             category = "Miscellaneous",
@@ -728,12 +737,30 @@ public class Config extends Vigilant {
 
     @Property(
             type = PropertyType.SWITCH,
+            name = "Show Arachne Spawn",
+            description = "Shows the location of the Arachne Altar when a fragment is placed.",
+            category = "Miscellaneous",
+            subcategory = "Quality of Life"
+    )
+    public boolean showArachneSpawn = false;
+
+    @Property(
+            type = PropertyType.SWITCH,
             name = "View Relic Waypoints",
-            description = "Shows the location of all the relics at the Spider's Den",
+            description = "Shows the location of all the relics at the Spider's Den.",
             category = "Miscellaneous",
             subcategory = "Quality of Life"
     )
     public boolean relicWaypoints = false;
+
+    @Property(
+            type = PropertyType.SWITCH,
+            name = "Find Rare Relics",
+            description = "Finds rare relics at the Spider's Den as you walk near them.",
+            category = "Miscellaneous",
+            subcategory = "Quality of Life"
+    )
+    public boolean rareRelicFinder = false;
 
     @Property(
             type = PropertyType.SWITCH,
