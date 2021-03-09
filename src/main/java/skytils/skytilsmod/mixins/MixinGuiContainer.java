@@ -32,6 +32,11 @@ public class MixinGuiContainer extends GuiScreen {
 
     private final GuiContainer that = (GuiContainer) (Object) this;
 
+    @Inject(method = "keyTyped", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/entity/EntityPlayerSP;closeScreen()V", shift = At.Shift.BEFORE))
+    private void closeWindowPressed(CallbackInfo ci) {
+        MinecraftForge.EVENT_BUS.post(new GuiContainerEvent.CloseWindowEvent(inventorySlots));
+    }
+
     @Shadow public Container inventorySlots;
 
     @Inject(method = "drawSlot", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/RenderItem;renderItemOverlayIntoGUI(Lnet/minecraft/client/gui/FontRenderer;Lnet/minecraft/item/ItemStack;IILjava/lang/String;)V"))
