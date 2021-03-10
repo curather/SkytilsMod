@@ -20,6 +20,7 @@ import skytils.skytilsmod.events.SendPacketEvent;
 import skytils.skytilsmod.events.handler.ClientEventHandler;
 import skytils.skytilsmod.features.impl.dungeons.BossHPDisplays;
 import skytils.skytilsmod.features.impl.dungeons.DungeonsFeatures;
+import skytils.skytilsmod.features.impl.dungeons.ScoreCalculation;
 import skytils.skytilsmod.features.impl.dungeons.solvers.*;
 import skytils.skytilsmod.features.impl.dungeons.solvers.terminals.*;
 import skytils.skytilsmod.features.impl.events.MayorJerry;
@@ -101,6 +102,7 @@ public class Skytils {
         MinecraftForge.EVENT_BUS.register(new MiscFeatures());
         MinecraftForge.EVENT_BUS.register(new PetFeatures());
         MinecraftForge.EVENT_BUS.register(new RelicWaypoints());
+        MinecraftForge.EVENT_BUS.register(new ScoreCalculation());
         MinecraftForge.EVENT_BUS.register(new SelectAllColorSolver());
         MinecraftForge.EVENT_BUS.register(new SimonSaysSolver());
         MinecraftForge.EVENT_BUS.register(new SpidersDenFeatures());
