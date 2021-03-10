@@ -1,5 +1,10 @@
 package skytils.skytilsmod.features.impl.spidersden;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonPrimitive;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.Entity;
@@ -11,6 +16,7 @@ import net.minecraft.util.EnumParticleTypes;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import skytils.skytilsmod.Skytils;
+import skytils.skytilsmod.core.DataFetcher;
 import skytils.skytilsmod.events.ReceivePacketEvent;
 import skytils.skytilsmod.events.SendPacketEvent;
 import skytils.skytilsmod.utils.RenderUtil;
@@ -18,6 +24,9 @@ import skytils.skytilsmod.utils.SBInfo;
 import skytils.skytilsmod.utils.Utils;
 
 import java.awt.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
@@ -26,6 +35,45 @@ public class RelicWaypoints {
     public static final HashSet<BlockPos> foundRelics = new HashSet<>();
 
     private static final HashSet<BlockPos> rareRelicLocations = new HashSet<>();
+
+    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private static File saveFile = null;
+    
+    public RelicWaypoints() {
+        saveFile = new File(Skytils.modDir, "found_spiders_den_relics.json");
+        reloadSave();
+    }
+
+    public static void reloadSave() {
+        foundRelics.clear();
+        JsonArray dataArray;
+        try (FileReader in = new FileReader(saveFile)) {
+            dataArray = gson.fromJson(in, JsonArray.class);
+            for (String serializedPosition : DataFetcher.getStringArrayFromJsonArray(dataArray)) {
+                String[] parts = serializedPosition.split(",");
+                foundRelics.add(new BlockPos(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2])));
+            }
+        } catch (Exception e) {
+            dataArray = new JsonArray();
+            try (FileWriter writer = new FileWriter(saveFile)) {
+                gson.toJson(dataArray, writer);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+
+    public static void writeSave() {
+        try (FileWriter writer = new FileWriter(saveFile)) {
+            JsonArray arr = new JsonArray();
+            for (BlockPos found : foundRelics) {
+                arr.add(new JsonPrimitive(found.getX() + "," + found.getY() + "," + found.getZ()));
+            }
+            gson.toJson(arr, writer);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
 
     @SubscribeEvent
     public void onReceivePacket(ReceivePacketEvent event) {
@@ -64,6 +112,7 @@ public class RelicWaypoints {
             if (relicLocations.contains(packet.getPosition())) {
                 foundRelics.add(packet.getPosition());
                 rareRelicLocations.remove(packet.getPosition());
+                writeSave();
             }
         }
     }
@@ -78,7 +127,7 @@ public class RelicWaypoints {
         double viewerZ = viewer.lastTickPosZ + (viewer.posZ - viewer.lastTickPosZ) * event.partialTicks;
 
         if (Skytils.config.relicWaypoints) {
-            for (BlockPos relic : relicLocations) {
+            for (BlockPos relic : ImmutableSet.copyOf(relicLocations)) {
                 if (foundRelics.contains(relic)) continue;
                 double x = relic.getX() - viewerX;
                 double y = relic.getY() - viewerY;
@@ -99,7 +148,7 @@ public class RelicWaypoints {
         }
 
         if (Skytils.config.rareRelicFinder) {
-            for (BlockPos relic : rareRelicLocations) {
+            for (BlockPos relic : ImmutableSet.copyOf(rareRelicLocations)) {
                 double x = relic.getX() - viewerX;
                 double y = relic.getY() - viewerY;
                 double z = relic.getZ() - viewerZ;

@@ -1,5 +1,7 @@
 package skytils.skytilsmod.features.impl.dungeons;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.ScaledResolution;
@@ -9,16 +11,20 @@ import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.StringUtils;
 import net.minecraft.world.World;
+import net.minecraftforge.client.ClientCommandHandler;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
 import skytils.skytilsmod.Skytils;
 import skytils.skytilsmod.core.structure.FloatPair;
 import skytils.skytilsmod.core.structure.GuiElement;
 import skytils.skytilsmod.events.AddChatMessageEvent;
 import skytils.skytilsmod.events.SendChatMessageEvent;
+import skytils.skytilsmod.utils.ScoreboardUtil;
+import skytils.skytilsmod.utils.TabListUtils;
 import skytils.skytilsmod.utils.Utils;
 import skytils.skytilsmod.utils.graphics.ScreenRenderer;
 import skytils.skytilsmod.utils.graphics.SmartFontRenderer;
@@ -30,35 +36,51 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ScoreCalculation {
-    public static final Pattern dungeonRoomsModPattern = Pattern.compile("^Dungeon Rooms: You are in §a(?<dimensions>.+) - (?<name>.+)-(?<secrets>\\d+)");
-    public static final Pattern internalPattern = Pattern.compile("^Party > .+: \\$SKYTILS-DUNGEON-SCORE-ROOM\\$: \\[(?<name>.+)\\] \\((?<secrets>\\d+)\\)$");
-    private static final Pattern secretsFoundPattern = Pattern.compile("§r Secrets Found: §r§b(?<secrets>\\d+)§r");
+    public static final Pattern partyAssistSecretsPattern = Pattern.compile("^Party > .+: \\$SKYTILS-DUNGEON-SCORE-ROOM\\$: \\[(?<name>.+)\\] \\((?<secrets>\\d+)\\)$");
 
     public static HashMap<String, Integer> rooms = new HashMap<>();
+
     public static boolean mimicKilled = false;
 
     private static final Minecraft mc = Minecraft.getMinecraft();
+    private static int ticks = 0;
 
     @SubscribeEvent
     public void onAddChatMessage(AddChatMessageEvent event) {
         if (!Utils.inDungeons) return;
         try {
-            Matcher matcher = ScoreCalculation.dungeonRoomsModPattern.matcher(event.message.getFormattedText());
-            if (matcher.find()) {
-                String name = matcher.group("name");
-                int secrets = Integer.parseInt(matcher.group("secrets"));
-                if (!ScoreCalculation.rooms.containsKey(name)) {
-                    ScoreCalculation.rooms.put(name, secrets);
-                    if (Skytils.config.scoreCalculationAssist) {
-                        Skytils.sendMessageQueue.add("/pc $SKYTILS-DUNGEON-SCORE-ROOM$: [" + name + "] (" + secrets + ")");
+            String unformatted = StringUtils.stripControlCodes(event.message.getUnformattedText());
+            if (unformatted.equals("null")) {
+                event.setCanceled(true);
+            }
+            if (unformatted.startsWith("{") && unformatted.endsWith("}")) {
+                JsonObject obj = new Gson().fromJson(unformatted, JsonObject.class);
+                if (obj.has("name") && obj.has("category") && obj.has("secrets")) {
+                    String name = obj.get("name").getAsString();
+                    int secrets = obj.get("secrets").getAsInt();
+                    if (!ScoreCalculation.rooms.containsKey(name)) {
+                        ScoreCalculation.rooms.put(name, secrets);
+                        if (Skytils.config.scoreCalculationAssist) {
+                            Skytils.sendMessageQueue.add("/pc $SKYTILS-DUNGEON-SCORE-ROOM$: [" + name + "] (" + secrets + ")");
+                        }
                     }
+                    event.setCanceled(true);
                 }
             }
-        } catch (NumberFormatException ignored) {
-
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @SubscribeEvent
+    public void onTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.START) return;
+
+        if (Utils.inDungeons && ticks % 30 == 0 && mc.thePlayer != null && mc.theWorld != null) {
+            ClientCommandHandler.instance.executeCommand(mc.thePlayer, "/room json");
+            ticks = 0;
+        }
+
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
@@ -67,20 +89,25 @@ public class ScoreCalculation {
         try {
             String unformatted = StringUtils.stripControlCodes(event.message.getUnformattedText());
             if (Skytils.config.scoreCalculationReceiveAssist) {
-                if (unformatted.startsWith("Party > ") && unformatted.contains("$SKYTILS-DUNGEON-SCORE-MIMIC$")) {
-                    mimicKilled = true;
-                    event.setCanceled(true);
-                    return;
-                }
-                Matcher matcher = internalPattern.matcher(unformatted);
-                if (matcher.find()) {
-                    String name = matcher.group("name");
-                    int secrets = Integer.parseInt(matcher.group("secrets"));
-                    if (!rooms.containsKey(name)) {
-                        rooms.put(name, secrets);
+                if (unformatted.startsWith("Party > ")) {
+                    if (unformatted.contains("$SKYTILS-DUNGEON-SCORE-MIMIC$")) {
+                        mimicKilled = true;
+                        event.setCanceled(true);
+                        return;
                     }
-                    event.setCanceled(true);
-                    return;
+
+                    if (unformatted.contains("$SKYTILS-DUNGEON-SCORE-ROOM$")) {
+                        Matcher matcher = partyAssistSecretsPattern.matcher(unformatted);
+                        if (matcher.find()) {
+                            String name = matcher.group("name");
+                            int secrets = Integer.parseInt(matcher.group("secrets"));
+                            if (!rooms.containsKey(name)) {
+                                rooms.put(name, secrets);
+                            }
+                            event.setCanceled(true);
+                            return;
+                        }
+                    }
                 }
             }
         } catch (NumberFormatException ignored) {
@@ -143,23 +170,127 @@ public class ScoreCalculation {
 
                 ArrayList<String> text = new ArrayList<>();
 
-                for (NetworkPlayerInfo pi : mc.getNetHandler().getPlayerInfoMap()) {
-                    if (pi.getDisplayName() == null) continue;
-                    String name = pi.getDisplayName().getFormattedText();
-                    if (name.contains("Secrets Found:")) {
-                        Matcher matcher = secretsFoundPattern.matcher(name);
+                int deaths = 0;
+                int missingPuzzles = 0;
+                int failedPuzzles = 0;
+                int foundSecrets = 0;
+                int totalSecrets = rooms.values().stream().mapToInt(Integer::intValue).sum();
+                int clearedPercentage = 0;
+                double secondsElapsed = 0;
+                int crypts = 0;
+
+                for (NetworkPlayerInfo pi : TabListUtils.getTabEntries()) {
+                    try {
+                        String name = mc.ingameGUI.getTabList().getPlayerName(pi);
+                        if (name.contains("Deaths:")) {
+                            Matcher matcher = Pattern.compile("§r§a§lDeaths: §r§f\\((?<deaths>\\d+)\\)§r").matcher(name);
+                            if (matcher.find()) {
+                                deaths = Integer.parseInt(matcher.group("deaths"));
+                                continue;
+                            }
+                        }
+                        if (name.contains("✦")) {
+                            Matcher matcher = Pattern.compile("§r (?<puzzle>.+): §r§7\\[§r§6§l✦§r§7\\]§r").matcher(name);
+                            if (matcher.find()) {
+                                missingPuzzles++;
+                                continue;
+                            }
+                        }
+                        if (name.contains("✖")) {
+                            Matcher matcher = Pattern.compile("§r (?<puzzle>.+): §r§7\\[§r§c§l✖§r§7\\] §r§f\\(§r(?<player>.+)§r§f\\)§r").matcher(name);
+                            if (matcher.find()) {
+                                failedPuzzles++;
+                                continue;
+                            }
+                            continue;
+                        }
+                        if (name.contains("Secrets Found:")) {
+                            Matcher matcher = Pattern.compile("§r Secrets Found: §r§b(?<secrets>\\d+)§r").matcher(name);
+                            if (matcher.find()) {
+                                foundSecrets = Integer.parseInt(matcher.group("secrets"));
+                                continue;
+                            }
+                        }
+                        if (name.contains("Crypts:")) {
+                            Matcher matcher = Pattern.compile("§r Crypts: §r§6(?<crypts>\\d+)§r").matcher(name);
+                            if (matcher.find()) {
+                                crypts = Integer.parseInt(matcher.group("crypts"));
+                                continue;
+                            }
+                        }
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+
+                for (String l : ScoreboardUtil.getSidebarLines()) {
+                    String line = ScoreboardUtil.cleanSB(l);
+                    if (line.startsWith("Dungeon Cleared:")) {
+                        Matcher matcher = Pattern.compile("Dungeon Cleared: (?<percentage>\\d+)%").matcher(line);
                         if (matcher.find()) {
-                            text.add("\u00a76Secrets Found: " + matcher.group("secrets"));
-                            break;
+                            clearedPercentage = Integer.parseInt(matcher.group("percentage"));
+                            continue;
+                        }
+                    }
+                    if (line.startsWith("Time Elapsed:")) {
+                        Matcher matcher = Pattern.compile("Time Elapsed: (?:(?<hrs>\\d+)h )?(?:(?<min>\\d+)m )?(?:(?<sec>\\d+)s)?").matcher(line);
+                        if (matcher.find()) {
+                            int hours;
+                            int minutes;
+                            int seconds;
+                            try {
+                                hours = Integer.parseInt(matcher.group("hrs"));
+                            } catch (IllegalStateException | NumberFormatException e) {
+                                hours = 0;
+                            }
+                            try {
+                                minutes = Integer.parseInt(matcher.group("min"));
+                            } catch (IllegalStateException | NumberFormatException e) {
+                                minutes = 0;
+                            }
+                            try {
+                                seconds = Integer.parseInt(matcher.group("sec"));
+                            } catch (IllegalStateException | NumberFormatException e) {
+                                seconds = 0;
+                            }
+
+                            secondsElapsed = (hours * 3600) + (minutes * 60) + seconds;
+                            continue;
                         }
                     }
                 }
 
-                text.add("\u00a76Estimated Secret Count: " + (Integer) rooms.values().stream().mapToInt(Integer::intValue).sum());
+                int skillScore = (100 - (2 * deaths) - (14 * (missingPuzzles + failedPuzzles)));
+                double discoveryScore = (Math.floor(60 * (clearedPercentage/100f)) + Math.floor((40*foundSecrets)/Math.max(1, totalSecrets)));
+                double speedScore;
+                int bonusScore = ((mimicKilled ? 2 : 0) + Math.min(crypts, 5));
 
+                double countedSeconds = DungeonsFeatures.dungeonFloor.equals("F2") ? Math.max(0, secondsElapsed - 120) : secondsElapsed;
+                if (countedSeconds <= 1320) {
+                    speedScore = 100;
+                } else if (1320 < countedSeconds && countedSeconds <= 1420) {
+                    speedScore = 232 - (0.1 * countedSeconds);
+                } else if (1420 < countedSeconds && countedSeconds <= 1820) {
+                    speedScore = 161 - (0.05 * countedSeconds);
+                } else if (1820 < countedSeconds && countedSeconds <= 3920) {
+                    speedScore = (392/3f) - ((1/30f) * countedSeconds);
+                } else speedScore = 0;
+
+                text.add("\u00a76Deaths:\u00a7a " + deaths);
+                text.add("\u00a76Missing Puzzles:\u00a7a " + missingPuzzles);
+                text.add("\u00a76Failed Puzzles:\u00a7a " + failedPuzzles);
+                text.add("\u00a76Secrets Found:\u00a7a " + foundSecrets);
+                text.add("\u00a76Estimated Secret Count:\u00a7a " + totalSecrets);
+                text.add("\u00a76Crypts:\u00a7a " + crypts);
                 if (DungeonsFeatures.dungeonFloor.equals("F6") || DungeonsFeatures.dungeonFloor.equals("F7")) {
-                    text.add("\u00a76Mimic Killed: " + (ScoreCalculation.mimicKilled ? "\u00a7a✓" : "\u00a7cX"));
+                    text.add("\u00a76Mimic Killed:" + (ScoreCalculation.mimicKilled ? "\u00a7a ✓" : " \u00a7c X"));
                 }
+
+                text.add("\u00a76Skill Score:\u00a7a " + skillScore);
+                text.add("\u00a76Estimated Discovery Score:\u00a7a " + (int)discoveryScore);
+                text.add("\u00a76Speed Score:\u00a7a " + (int)speedScore);
+                text.add("\u00a76Estimated Bonus Score:\u00a7a " + bonusScore);
+                text.add("\u00a76Estimated Total Score:\u00a7a " + (int)(skillScore + discoveryScore + speedScore + bonusScore));
+
 
                 GlStateManager.scale(this.getScale(), this.getScale(), 1.0);
                 for (int i = 0; i < text.size(); i++) {
@@ -177,7 +308,10 @@ public class ScoreCalculation {
             boolean leftAlign = getActualX() < sr.getScaledWidth() / 2f;
 
             ArrayList<String> text = new ArrayList<>();
+            text.add("\u00a76Secrets Found: 99");
             text.add("\u00a76Estimated Secret Count: 99");
+            text.add("\u00a76Crypts: 99");
+            text.add("\u00a76Mimic Killed:\u00a7a ✓");
 
             for (int i = 0; i < text.size(); i++) {
                 SmartFontRenderer.TextAlignment alignment = leftAlign ? SmartFontRenderer.TextAlignment.LEFT_RIGHT : SmartFontRenderer.TextAlignment.RIGHT_LEFT;
@@ -187,7 +321,7 @@ public class ScoreCalculation {
 
         @Override
         public int getHeight() {
-            return ScreenRenderer.fontRenderer.FONT_HEIGHT;
+            return ScreenRenderer.fontRenderer.FONT_HEIGHT * 4;
         }
 
         @Override
