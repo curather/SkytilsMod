@@ -8,6 +8,7 @@ import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.monster.EntityZombie;
+import net.minecraft.network.play.server.S29PacketSoundEffect;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.StringUtils;
 import net.minecraft.world.World;
@@ -22,7 +23,9 @@ import skytils.skytilsmod.Skytils;
 import skytils.skytilsmod.core.structure.FloatPair;
 import skytils.skytilsmod.core.structure.GuiElement;
 import skytils.skytilsmod.events.AddChatMessageEvent;
+import skytils.skytilsmod.events.ReceivePacketEvent;
 import skytils.skytilsmod.events.SendChatMessageEvent;
+import skytils.skytilsmod.utils.MathUtil;
 import skytils.skytilsmod.utils.ScoreboardUtil;
 import skytils.skytilsmod.utils.TabListUtils;
 import skytils.skytilsmod.utils.Utils;
@@ -32,6 +35,7 @@ import skytils.skytilsmod.utils.graphics.colors.CommonColors;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -77,7 +81,9 @@ public class ScoreCalculation {
         if (event.phase != TickEvent.Phase.START) return;
 
         if (Utils.inDungeons && ticks % 30 == 0 && mc.thePlayer != null && mc.theWorld != null) {
-            ClientCommandHandler.instance.executeCommand(mc.thePlayer, "/room json");
+            if (!DungeonsFeatures.hasBossSpawned && (Skytils.config.showScoreCalculation || Skytils.config.scoreCalculationAssist)) {
+                ClientCommandHandler.instance.executeCommand(mc.thePlayer, "/room json");
+            }
             ticks = 0;
         }
 
@@ -86,8 +92,8 @@ public class ScoreCalculation {
     @SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
     public void onChatReceived(ClientChatReceivedEvent event) {
         if (!Utils.inDungeons || mc.thePlayer == null) return;
+        String unformatted = StringUtils.stripControlCodes(event.message.getUnformattedText());
         try {
-            String unformatted = StringUtils.stripControlCodes(event.message.getUnformattedText());
             if (Skytils.config.scoreCalculationReceiveAssist) {
                 if (unformatted.startsWith("Party > ")) {
                     if (unformatted.contains("$SKYTILS-DUNGEON-SCORE-MIMIC$")) {
@@ -115,6 +121,11 @@ public class ScoreCalculation {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        if (Skytils.config.removePartyChatNotifFromScoreCalc) {
+            if (unformatted.startsWith("Party > ") && mc.thePlayer != null && !unformatted.contains(mc.thePlayer.getName())) {
+                mc.thePlayer.playSound("random.orb", 1, 1);
+            }
+        }
     }
 
     @SubscribeEvent
@@ -129,6 +140,21 @@ public class ScoreCalculation {
                         Skytils.sendMessageQueue.add("/pc $SKYTILS-DUNGEON-SCORE-MIMIC$");
                     }
                 }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public void onReceivePacket(ReceivePacketEvent event) {
+        if (!Utils.inDungeons) return;
+        if (event.packet instanceof S29PacketSoundEffect) {
+            S29PacketSoundEffect packet = (S29PacketSoundEffect) event.packet;
+            String sound = packet.getSoundName();
+            float pitch = packet.getPitch();
+            float volume = packet.getVolume();
+
+            if (Skytils.config.removePartyChatNotifFromScoreCalc && sound.equals("random.orb") && pitch == 1f && volume == 1f) {
+                event.setCanceled(true);
             }
         }
     }
@@ -260,11 +286,11 @@ public class ScoreCalculation {
                 }
 
                 int skillScore = (100 - (2 * deaths) - (14 * (missingPuzzles + failedPuzzles)));
-                double discoveryScore = (Math.floor(60 * (clearedPercentage/100f)) + Math.floor((40*foundSecrets)/Math.max(1, totalSecrets)));
+                double discoveryScore = (MathUtil.clamp(Math.floor(60 * (clearedPercentage/100f)), 0,60) + (totalSecrets <= 0 ? 0 : MathUtil.clamp(Math.floor((40f*foundSecrets)/totalSecrets), 0, 40)));
                 double speedScore;
                 int bonusScore = ((mimicKilled ? 2 : 0) + Math.min(crypts, 5));
 
-                double countedSeconds = DungeonsFeatures.dungeonFloor.equals("F2") ? Math.max(0, secondsElapsed - 120) : secondsElapsed;
+                double countedSeconds = Objects.equals(DungeonsFeatures.dungeonFloor, "F2") ? Math.max(0, secondsElapsed - 120) : secondsElapsed;
                 if (countedSeconds <= 1320) {
                     speedScore = 100;
                 } else if (1320 < countedSeconds && countedSeconds <= 1420) {

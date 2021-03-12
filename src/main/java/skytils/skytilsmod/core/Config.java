@@ -95,7 +95,7 @@ public class Config extends Vigilant {
     @Property(
             type = PropertyType.SWITCH,
             name = "Score Calculation Party Assist",
-            description = "Helps your party determine the amount of secrets in the dungeon.\nRequires the Dungeon Rooms mod in order to use.",
+            description = "Helps your party determine the amount of secrets in the dungeon by sending room info in party chat.\u00a7cThis feature is use at your own risk.",
             category = "Dungeons",
             subcategory = "Score Calculation"
     )
@@ -109,6 +109,15 @@ public class Config extends Vigilant {
             subcategory = "Score Calculation"
     )
     public boolean scoreCalculationReceiveAssist = false;
+
+    @Property(
+            type = PropertyType.SWITCH,
+            name = "Remove Party Chat Notification Sounds",
+            description = "Removes party chat notification sounds caused by score calculation.\n\u00a7cDo not turn this on if you do not use the Hypixel feature.",
+            category = "Dungeons",
+            subcategory = "Score Calculation"
+    )
+    public boolean removePartyChatNotifFromScoreCalc = false;
 
     @Property(
             type = PropertyType.SWITCH,
@@ -199,6 +208,25 @@ public class Config extends Vigilant {
             subcategory = "Quality of Life"
     )
     public boolean showHiddenShadowAssassins = false;
+
+    @Property(
+            type = PropertyType.SWITCH,
+            name = "Show Sadan's Interest",
+            description = "Replace Sadan's interest display with Skytils' own.",
+            category = "Dungeons",
+            subcategory = "Quality of Life"
+    )
+    public boolean showSadanInterest = false;
+
+    @Property(
+            type = PropertyType.SELECTOR,
+            name = "Show Necron's HP",
+            description = "Shows additional info about Necron's health.",
+            category = "Dungeons",
+            subcategory = "Quality of Life",
+            options = {"None", "HP", "Percentage Health"}
+    )
+    public Integer necronHealth = 0;
 
     @Property(
             type = PropertyType.SWITCH,
@@ -636,6 +664,15 @@ public class Config extends Vigilant {
     public boolean customDamageSplash = false;
 
     @Property(
+            type = PropertyType.SWITCH,
+            name = "Disable Night Vision",
+            description = "Removes the vanilla effects of Night Vision.",
+            category = "Miscellaneous",
+            subcategory = "Quality of Life"
+    )
+    public boolean disableNightVision = false;
+
+    @Property(
             type = PropertyType.SLIDER,
             name = "Dungeon Pot Lock",
             description = "Only allows you to purchase this dungeon pot from Ophelia, no other items.",
@@ -743,6 +780,15 @@ public class Config extends Vigilant {
             subcategory = "Quality of Life"
     )
     public boolean showArachneSpawn = false;
+
+    @Property(
+            type = PropertyType.SWITCH,
+            name = "Show Arachne HP",
+            description = "Shows the HP of Arachne on your HUD.",
+            category = "Miscellaneous",
+            subcategory = "Quality of Life"
+    )
+    public boolean showArachneHP = false;
 
     @Property(
             type = PropertyType.SWITCH,
