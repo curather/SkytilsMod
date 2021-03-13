@@ -18,7 +18,7 @@ import skytils.skytilsmod.core.DataFetcher;
 import skytils.skytilsmod.core.GuiManager;
 import skytils.skytilsmod.core.UpdateChecker;
 import skytils.skytilsmod.events.SendPacketEvent;
-import skytils.skytilsmod.events.handler.ClientEventHandler;
+import skytils.skytilsmod.features.impl.SlayerFeatures;
 import skytils.skytilsmod.features.impl.dungeons.BossHPDisplays;
 import skytils.skytilsmod.features.impl.dungeons.DungeonsFeatures;
 import skytils.skytilsmod.features.impl.dungeons.ScoreCalculation;
@@ -111,6 +111,7 @@ public class Skytils {
         MinecraftForge.EVENT_BUS.register(new ScoreCalculation());
         MinecraftForge.EVENT_BUS.register(new SelectAllColorSolver());
         MinecraftForge.EVENT_BUS.register(new SimonSaysSolver());
+        MinecraftForge.EVENT_BUS.register(new SlayerFeatures());
         MinecraftForge.EVENT_BUS.register(new SpidersDenFeatures());
         MinecraftForge.EVENT_BUS.register(new StartsWithSequenceSolver());
         MinecraftForge.EVENT_BUS.register(new TeleportMazeSolver());
@@ -118,8 +119,6 @@ public class Skytils {
         MinecraftForge.EVENT_BUS.register(new ThreeWeirdosSolver());
         MinecraftForge.EVENT_BUS.register(new TriviaSolver());
         MinecraftForge.EVENT_BUS.register(new WaterBoardSolver());
-
-        MinecraftForge.EVENT_BUS.register(new ClientEventHandler());
 
         ScreenRenderer.refresh();
 
