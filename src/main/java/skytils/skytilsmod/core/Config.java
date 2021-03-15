@@ -473,6 +473,15 @@ public class Config extends Vigilant {
 
     @Property(
             type = PropertyType.SWITCH,
+            name = "Show Sneaky Creeper",
+            description = "Makes Sneaky Creepers in the Deep Caverns visible.",
+            category = "Mining",
+            subcategory = "Quality of Life"
+    )
+    public boolean showSneakyCreeper = false;
+
+    @Property(
+            type = PropertyType.SWITCH,
             name = "Powder Ghast Ping",
             description = "Displays a title on your screen when a Powder Ghast spawns.",
             category = "Mining",
@@ -801,6 +810,15 @@ public class Config extends Vigilant {
 
     @Property(
             type = PropertyType.SWITCH,
+            name = "Slayer Miniboss Spawn Alert",
+            description = "Displays a title when a slayer miniboss spawns.",
+            category = "Miscellaneous",
+            subcategory = "Quality of Life"
+    )
+    public boolean slayerMinibossSpawnAlert = false;
+
+    @Property(
+            type = PropertyType.SWITCH,
             name = "No Hurtcam",
             description = "Removes the screen shake when you are hurt.",
             category = "Miscellaneous",
@@ -925,6 +943,15 @@ public class Config extends Vigilant {
             options = {"Normal", "Hidden", "Separate GUI"}
     )
     public int hideAutopetMessages = 0;
+
+    @Property(
+            type = PropertyType.SWITCH,
+            name = "Hide Pet Nametags",
+            description = "Hides the nametags above pets.",
+            category = "Pets",
+            subcategory = "Quality of Life"
+    )
+    public boolean hidePetNametags = false;
 
     @Property(
             type = PropertyType.SWITCH,
