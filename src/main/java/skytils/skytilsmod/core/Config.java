@@ -157,6 +157,24 @@ public class Config extends Vigilant {
 
     @Property(
             type = PropertyType.SWITCH,
+            name = "Hide Terracotta Nametags",
+            description = "Hides the nametags of the Terracotta while in Dungeons",
+            category = "Dungeons",
+            subcategory = "Quality of Life"
+    )
+    public boolean hideTerracotaNametags = false;
+
+    @Property(
+            type = PropertyType.SWITCH,
+            name = "Hide Non-Starred Mobs Nametags",
+            description = "Hides the nametags of non-starred mobs while in Dungeons",
+            category = "Dungeons",
+            subcategory = "Quality of Life"
+    )
+    public boolean hideNonStarredNametags = false;
+
+    @Property(
+            type = PropertyType.SWITCH,
             name = "Larger Bat Models",
             description = "Increases the size of bat models.\nThe hitbox of the bat may be offset from what is shown.",
             category = "Dungeons",
@@ -455,6 +473,33 @@ public class Config extends Vigilant {
 
     @Property(
             type = PropertyType.SWITCH,
+            name = "Powder Ghast Ping",
+            description = "Displays a title on your screen when a Powder Ghast spawns.",
+            category = "Mining",
+            subcategory = "Quality of Life"
+    )
+    public boolean powerGhastPing = false;
+
+    @Property(
+            type = PropertyType.SWITCH,
+            name = "Raffle Warning",
+            description = "Displays a title on your screen 15 seconds from the ending of the raffle.",
+            category = "Mining",
+            subcategory = "Quality of Life"
+    )
+    public boolean raffleWarning = false;
+
+    @Property(
+            type = PropertyType.SWITCH,
+            name = "Raffle Waypoint",
+            description = "Displays a waypoint on your screen to the raffle box after you deposit a ticket.",
+            category = "Mining",
+            subcategory = "Quality of Life"
+    )
+    public boolean raffleWaypoint = false;
+
+    @Property(
+            type = PropertyType.SWITCH,
             name = "Show Ghosts",
             description = "Makes the ghosts in The Mist visible.",
             category = "Mining",
@@ -702,12 +747,12 @@ public class Config extends Vigilant {
 
     @Property(
             type = PropertyType.SWITCH,
-            name = "Hide Jerry Rune",
-            description = "Prevents the game from rendering the items spawned by the Jerry rune.",
+            name = "Hide Creeper Veil Near NPCs",
+            description = "Stops the Creeper Veil from blocking interaction with NPCs.",
             category = "Miscellaneous",
             subcategory = "Quality of Life"
     )
-    public boolean hideJerryRune = false;
+    public boolean hideCreeperVeilNearNPCs = false;
 
     @Property(
             type = PropertyType.SWITCH,
@@ -717,6 +762,15 @@ public class Config extends Vigilant {
             subcategory = "Quality of Life"
     )
     public boolean hideEntityFire = false;
+
+    @Property(
+            type = PropertyType.SWITCH,
+            name = "Hide Jerry Rune",
+            description = "Prevents the game from rendering the items spawned by the Jerry rune.",
+            category = "Miscellaneous",
+            subcategory = "Quality of Life"
+    )
+    public boolean hideJerryRune = false;
 
     @Property(
             type = PropertyType.SWITCH,
@@ -747,12 +801,30 @@ public class Config extends Vigilant {
 
     @Property(
             type = PropertyType.SWITCH,
+            name = "No Hurtcam",
+            description = "Removes the screen shake when you are hurt.",
+            category = "Miscellaneous",
+            subcategory = "Quality of Life"
+    )
+    public boolean noHurtcam = false;
+
+    @Property(
+            type = PropertyType.SWITCH,
             name = "Ping when in Atoned Horror Danger Zone",
             description = "Pings when you are standing on the Atoned Horror's TNT target.",
             category = "Miscellaneous",
             subcategory = "Quality of Life"
     )
     public boolean rev5TNTPing = false;
+
+    @Property(
+            type = PropertyType.SWITCH,
+            name = "Power Orb Lock",
+            description = "Prevents placing the power orb if the same or better power orb is within range.",
+            category = "Miscellaneous",
+            subcategory = "Quality of Life"
+    )
+    public boolean powerOrbLock = false;
 
     @Property(
             type = PropertyType.SWITCH,
@@ -801,6 +873,15 @@ public class Config extends Vigilant {
 
     @Property(
             type = PropertyType.SWITCH,
+            name = "Stop Clicking Non-Salvageable Items",
+            description = "Stops you from clicking Non-Salvageable items while in the Salvage menu",
+            category = "Miscellaneous",
+            subcategory = "Quality of Life"
+    )
+    public boolean stopClickingNonSalvageable = false;
+
+    @Property(
+            type = PropertyType.SWITCH,
             name = "View Relic Waypoints",
             description = "Shows the location of all the relics at the Spider's Den.",
             category = "Miscellaneous",
@@ -836,13 +917,14 @@ public class Config extends Vigilant {
     public boolean dolphinCap = true;
 
     @Property(
-            type = PropertyType.SWITCH,
-            name = "Hide Autopet Messages",
-            description = "Removes all autopet messages from chat.",
+            type = PropertyType.SELECTOR,
+            name = "Autopet Message Hider",
+            description = "Removes autopet messages from your chat.",
             category = "Pets",
-            subcategory = "Quality of Life"
+            subcategory = "Quality of Life",
+            options = {"Normal", "Hidden", "Separate GUI"}
     )
-    public boolean hideAutopetMessages = false;
+    public int hideAutopetMessages = 0;
 
     @Property(
             type = PropertyType.SWITCH,
@@ -1059,7 +1141,7 @@ public class Config extends Vigilant {
             subcategory = "Miscellaneous",
             options = {"Normal", "Hidden", "Separate GUI"}
     )
-    public int CantUseAbilityHider = 0;
+    public int hideCantUseAbility = 0;
 
     @Property(
             type = PropertyType.SELECTOR,

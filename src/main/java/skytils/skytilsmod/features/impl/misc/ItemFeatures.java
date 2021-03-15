@@ -1,7 +1,6 @@
 package skytils.skytilsmod.features.impl.misc;
 
 import com.google.common.collect.ImmutableList;
-import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.inventory.GuiChest;
@@ -16,10 +15,12 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.play.server.S2APacketParticles;
-import net.minecraft.util.*;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.EnumParticleTypes;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import skytils.skytilsmod.Skytils;
@@ -36,8 +37,6 @@ import skytils.skytilsmod.utils.graphics.SmartFontRenderer;
 import skytils.skytilsmod.utils.graphics.colors.CommonColors;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -49,6 +48,7 @@ public class ItemFeatures {
 
     @SubscribeEvent
     public void onGuiDraw(GuiScreenEvent.BackgroundDrawnEvent event) {
+        if (!Utils.inSkyblock) return;
         if (event.gui instanceof GuiChest) {
             GuiChest gui = (GuiChest) event.gui;
             ContainerChest chest = (ContainerChest) gui.inventorySlots;
@@ -60,7 +60,8 @@ public class ItemFeatures {
                         ItemStack stack = slot.getStack();
                         if (stack == null) continue;
                         NBTTagCompound extraAttr = ItemUtil.getExtraAttributes(stack);
-                        if (extraAttr == null || !extraAttr.hasKey("baseStatBoostPercentage") || extraAttr.hasKey("dungeon_item_level")) continue;
+                        if (extraAttr == null || !extraAttr.hasKey("baseStatBoostPercentage") || extraAttr.hasKey("dungeon_item_level"))
+                            continue;
                         RenderUtil.drawOnSlot(mc.thePlayer.inventory.getSizeInventory(), slot.xDisplayPosition, slot.yDisplayPosition + 1, new Color(15, 233, 233, 225).getRGB());
                     }
                 }
@@ -85,7 +86,7 @@ public class ItemFeatures {
             ItemStack item = mc.thePlayer.inventory.getItemStack();
             NBTTagCompound extraAttr = ItemUtil.getExtraAttributes(item);
             if (Skytils.config.protectStarredItems && extraAttr != null) {
-                if ((item.getDisplayName().contains("✪") || extraAttr.hasKey("dungeon_item_level"))) {
+                if (extraAttr.hasKey("dungeon_item_level")) {
                     notifyAndMoveToFreeSlot(event.container);
                     return;
                 }
@@ -113,23 +114,33 @@ public class ItemFeatures {
                             item = salvageItem;
                             inSalvageGui = true;
                         }
-                        if ((item.getDisplayName().contains("✪") || extraAttr.hasKey("dungeon_item_level")) && (event.slot.inventory == mc.thePlayer.inventory || inSalvageGui)) {
+                        if (extraAttr.hasKey("dungeon_item_level") && (event.slot.inventory == mc.thePlayer.inventory || inSalvageGui)) {
                             mc.thePlayer.playSound("note.bass", 1, 0.5f);
                             mc.thePlayer.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "Skytils has stopped you from salvaging that item!"));
                             event.setCanceled(true);
                             return;
                         }
                     }
-                    if (!chestName.equals("Large Chest") && !chestName.contains("Auction") && inv.getSizeInventory() == 54 && extraAttr != null) {
-                        ItemStack sellItem = inv.getStackInSlot(49);
-                        if (sellItem != null) {
-                            if ((sellItem.getItem() == Item.getItemFromBlock(Blocks.hopper) && sellItem.getDisplayName().contains("Sell Item")) || ItemUtil.getItemLore(sellItem).stream().anyMatch(s -> s.contains("buyback"))) {
-                                if ((item.getDisplayName().contains("✪") || extraAttr.hasKey("dungeon_item_level")) && (event.slot.inventory == mc.thePlayer.inventory && event.slotId != 49)) {
-                                    mc.thePlayer.playSound("note.bass", 1, 0.5f);
-                                    mc.thePlayer.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "Skytils has stopped you from selling that item!"));
-                                    event.setCanceled(true);
-                                    return;
-                                }
+                }
+                if (Skytils.config.stopClickingNonSalvageable) {
+                    String itemId = ItemUtil.getSkyBlockItemID(item);
+                    if (chestName.startsWith("Salvage") && extraAttr != null) {
+                        if (!extraAttr.hasKey("baseStatBoostPercentage") && !item.getDisplayName().contains("Salvage") && !item.getDisplayName().contains("Essence")) {
+                            event.setCanceled(true);
+                            if (itemId.contains("BACKPACK") && !itemId.equals("JUMBO_BACKPACK_UPGRADE"))
+                                event.setCanceled(false);
+                        }
+                    }
+                }
+                if (!chestName.equals("Large Chest") && !chestName.contains("Auction") && inv.getSizeInventory() == 54 && extraAttr != null) {
+                    ItemStack sellItem = inv.getStackInSlot(49);
+                    if (sellItem != null) {
+                        if ((sellItem.getItem() == Item.getItemFromBlock(Blocks.hopper) && sellItem.getDisplayName().contains("Sell Item")) || ItemUtil.getItemLore(sellItem).stream().anyMatch(s -> s.contains("buyback"))) {
+                            if (extraAttr.hasKey("dungeon_item_level") && (event.slot.inventory == mc.thePlayer.inventory && event.slotId != 49)) {
+                                mc.thePlayer.playSound("note.bass", 1, 0.5f);
+                                mc.thePlayer.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "Skytils has stopped you from selling that item!"));
+                                event.setCanceled(true);
+                                return;
                             }
                         }
                     }
@@ -140,7 +151,7 @@ public class ItemFeatures {
             ItemStack item = mc.thePlayer.inventory.getItemStack();
             NBTTagCompound extraAttr = ItemUtil.getExtraAttributes(item);
             if (Skytils.config.protectStarredItems && extraAttr != null) {
-                if ((item.getDisplayName().contains("✪") || extraAttr.hasKey("dungeon_item_level"))) {
+                if (extraAttr.hasKey("dungeon_item_level")) {
                     notifyAndMoveToFreeSlot(event.container);
                     event.setCanceled(true);
                     return;
@@ -151,7 +162,7 @@ public class ItemFeatures {
             ItemStack item = event.slot.getStack();
             NBTTagCompound extraAttr = ItemUtil.getExtraAttributes(item);
             if (Skytils.config.protectStarredItems && extraAttr != null) {
-                if ((item.getDisplayName().contains("✪") || extraAttr.hasKey("dungeon_item_level"))) {
+                if (extraAttr.hasKey("dungeon_item_level")) {
                     mc.thePlayer.playSound("note.bass", 1, 0.5f);
                     mc.thePlayer.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "Skytils has stopped you from dropping that item!"));
                     event.setCanceled(true);
@@ -163,6 +174,7 @@ public class ItemFeatures {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onTooltip(ItemTooltipEvent event) {
+        if (!Utils.inSkyblock) return;
         ItemStack item = event.itemStack;
 
         if (Skytils.config.showSoulEaterBonus) {
@@ -197,6 +209,8 @@ public class ItemFeatures {
 
     @SubscribeEvent
     public void onReceivePacket(ReceivePacketEvent event) {
+        if (!Utils.inSkyblock) return;
+
         if (event.packet instanceof S2APacketParticles) {
             S2APacketParticles packet = (S2APacketParticles) event.packet;
 
@@ -255,12 +269,12 @@ public class ItemFeatures {
 
         List<String> lore = ItemUtil.getItemLore(item);
 
-        if(!lore.isEmpty()) {
+        if (!lore.isEmpty()) {
             if (Skytils.config.showPetCandies && item.getItem() == Items.skull) {
                 Pattern candyPattern = Pattern.compile("§a\\((\\d+)/10\\) Pet Candy Used");
-                for(String line : lore) {
+                for (String line : lore) {
                     Matcher candyLineMatcher = candyPattern.matcher(line);
-                    if(candyLineMatcher.matches()) {
+                    if (candyLineMatcher.matches()) {
                         stackTip = String.valueOf(candyLineMatcher.group(1));
                         break;
                     }
@@ -273,7 +287,7 @@ public class ItemFeatures {
             GlStateManager.disableLighting();
             GlStateManager.disableDepth();
             GlStateManager.disableBlend();
-            event.fr.drawStringWithShadow(stackTip, (float)(event.x + 17 - event.fr.getStringWidth(stackTip)), (float)(event.y + 9), 16777215);
+            event.fr.drawStringWithShadow(stackTip, (float) (event.x + 17 - event.fr.getStringWidth(stackTip)), (float) (event.y + 9), 16777215);
             GlStateManager.enableLighting();
             GlStateManager.enableDepth();
         }
@@ -308,7 +322,7 @@ public class ItemFeatures {
 
                             GlStateManager.scale(this.getScale(), this.getScale(), 1.0);
                             mc.fontRendererObj.drawString("\u00a7cSoul Strength: \u00a7a" + bonus, x, y, 0xFFFFFF, true);
-                            GlStateManager.scale(1/this.getScale(), 1/this.getScale(), 1.0F);
+                            GlStateManager.scale(1 / this.getScale(), 1 / this.getScale(), 1.0F);
                         }
                     }
                 }

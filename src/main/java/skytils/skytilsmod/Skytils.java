@@ -49,7 +49,7 @@ import java.util.Objects;
 public class Skytils {
     public static final String MODID = "skytils";
     public static final String MOD_NAME = "Skytils";
-    public static final String VERSION = "0.1.2-pre3";
+    public static final String VERSION = "0.1.2-pre4";
     public static final Minecraft mc = Minecraft.getMinecraft();
 
     public static Config config = new Config();
@@ -59,6 +59,7 @@ public class Skytils {
     public static int ticks = 0;
 
     public static ArrayDeque<String> sendMessageQueue = new ArrayDeque<>();
+    public static boolean usingDungeonRooms = false;
     public static boolean usingLabymod = false;
     public static boolean usingNEU = false;
     private static long lastChatMessage = 0;
@@ -102,6 +103,7 @@ public class Skytils {
         MinecraftForge.EVENT_BUS.register(new IceFillSolver());
         MinecraftForge.EVENT_BUS.register(new IcePathSolver());
         MinecraftForge.EVENT_BUS.register(new ItemFeatures());
+        MinecraftForge.EVENT_BUS.register(new LockOrb());
         MinecraftForge.EVENT_BUS.register(new MayorJerry());
         MinecraftForge.EVENT_BUS.register(new MiningFeatures());
         MinecraftForge.EVENT_BUS.register(new MinionFeatures());
@@ -126,6 +128,7 @@ public class Skytils {
 
     @Mod.EventHandler
     public void postInit(FMLPostInitializationEvent event) {
+        usingDungeonRooms = Loader.isModLoaded("dungeonrooms");
         usingLabymod = Loader.isModLoaded("labymod");
         usingNEU = Loader.isModLoaded("notenoughupdates");
 
